@@ -1,0 +1,27 @@
+name: probe
+on: [push, workflow_dispatch]
+jobs:
+  probe:
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [macos-26, xcode-27, macos-15]
+    runs-on: ${{ matrix.image }}
+    timeout-minutes: 15
+    steps:
+      - name: Machine
+        run: |
+          sw_vers
+          sysctl -n machdep.cpu.brand_string hw.ncpu hw.memsize
+          df -h / | tail -1
+      - name: Xcode versions installed
+        run: |
+          ls -d /Applications/Xcode*.app
+          xcodebuild -version
+          for x in /Applications/Xcode*.app; do echo "$x: $(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$x/Contents/version.plist")"; done
+      - name: Simulator runtimes and devices
+        run: |
+          xcrun simctl list runtimes
+          xcrun simctl list devicetypes | grep -iE "iPhone 1[5-9]|iPad Pro" | head -30
+      - name: Downloadable platforms
+        run: xcodebuild -showsdks | head -30
